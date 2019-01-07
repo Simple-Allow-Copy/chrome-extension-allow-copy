@@ -1,10 +1,12 @@
 {
   "manifest_version": 2,
   "name": "Simple Allow Copy",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Allow Copy on every websites",
   "icons": {
-    "16": "icons/active.png"
+    "16": "icons/active.png",
+    "48": "icons/active.png",
+    "128": "icons/active.png"
   },
   "browser_action": {
     "default_icon": {
