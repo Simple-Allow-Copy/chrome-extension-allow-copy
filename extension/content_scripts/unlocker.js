@@ -3,11 +3,9 @@ const unlocker = (() => {
   // because content_script's access to BOM is restricted by Chrome
   // see: https://developer.chrome.com/extensions/content_scripts#isolated_world
   function agent() {
-    let isUnlockingCached = false
-    const isUnlocking = () => isUnlockingCached
-    document.addEventListener('allow_copy', event => {
-      const { unlock } = event.detail
-      isUnlockingCached = unlock
+    let unlock = false
+    document.addEventListener('allow_copy', (event) => {
+      unlock = event.detail.unlock
     })
 
     const copyEvents = [
@@ -22,13 +20,13 @@ const unlocker = (() => {
       'keypress',
       'keyup',
     ]
-    const rejectOtherHandlers = e => {
-      if (isUnlocking()) {
+    const rejectOtherHandlers = (e) => {
+      if (unlock) {
         e.stopPropagation()
         if (e.stopImmediatePropagation) e.stopImmediatePropagation()
       }
     }
-    copyEvents.forEach(evt => {
+    copyEvents.forEach((evt) => {
       document.documentElement.addEventListener(evt, rejectOtherHandlers, {
         capture: true,
       })
@@ -84,7 +82,10 @@ const unlocker = (() => {
       const style = doc.createElement('STYLE')
       style.id = CSS_ELEM_ID
       style.innerHTML =
-        ' html,body,*,*::before,*::after { -webkit-user-select: initial !important; user-select: initial !important; } '
+        `html, body, *, *::before, *::after, html body *, #${JS_ELEM_ID} ~ body * {\n` +
+        '  -webkit-user-select: initial !important; \n' +
+        '  user-select: initial !important; \n' +
+        '} '
       doc.documentElement.append(style)
     } catch (error) {
       logger.error('[simple allow copy] cannot add css', error)
@@ -108,8 +109,8 @@ const unlocker = (() => {
       return [].concat(
         wnd,
         ...iframes
-          .map(iframe => iframe.contentWindow)
-          .map(childWnd => getFrameWindows(childWnd))
+          .map((iframe) => iframe.contentWindow)
+          .map((childWnd) => getFrameWindows(childWnd)),
       )
     } catch (error) {
       logger.error('[simple allow copy] cannot get frame window', error)
@@ -117,19 +118,19 @@ const unlocker = (() => {
     }
   }
 
-  let wnds = []
+  let windows = []
   let isEnabled = false
 
   const enable = () => {
     isEnabled = true
-    wnds.forEach(wnd => {
+    windows.forEach((wnd) => {
       enableAgent(wnd)
       addCss(wnd)
     })
   }
   const disable = () => {
     isEnabled = false
-    wnds.forEach(wnd => {
+    windows.forEach((wnd) => {
       disableAgent(wnd)
       removeCss(wnd)
     })
@@ -142,9 +143,9 @@ const unlocker = (() => {
   }
 
   const initForFrames = () => {
-    wnds = getFrameWindows()
-    logger.log('windows ', wnds)
-    wnds.forEach(wnd => injectAgent(wnd))
+    windows = getFrameWindows()
+    logger.log('windows ', windows)
+    windows.forEach((wnd) => injectAgent(wnd))
     if (isEnabled) {
       enable()
     } else {
@@ -153,7 +154,7 @@ const unlocker = (() => {
   }
 
   initForFrames()
-  ;[1000, 3000, 5000, 10000].forEach(delay => {
+  ;[1000, 3000, 5000, 10000].forEach((delay) => {
     setTimeout(initForFrames, delay)
   })
 
