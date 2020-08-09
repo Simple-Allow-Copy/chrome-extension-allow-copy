@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Simple Allow Copy",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Allow Copy on every websites",
   "icons": {
     "16": "icons/active.png",
